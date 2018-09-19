@@ -1,0 +1,41 @@
+﻿#pragma kernel Main
+#include "ClassicNoise3D.cginc"
+
+RWStructuredBuffer<float3> _PreOffset;
+RWStructuredBuffer<float3> _Positions;
+float3 _Converge;
+float _ConvergeRadius;
+float _ConvergeStrength;
+float _ConvergeSpeed;
+int3 _Dimensions;
+float _Time;
+float _Speed;
+float _MaxOffset;
+
+float3 random(int index) 
+{
+	return frac(sin(index * float3(54998.1518, 21114.1262, 55223.9101))) * 8.8436;
+}
+
+[numthreads(4,4,4)]
+void Main(uint3 id : SV_DispatchThreadID)
+{
+	// Create perlin noise to affect particle positions
+	float index = id.x * _Dimensions.z * _Dimensions.y + id.y * _Dimensions.z + id.z;
+	float3 seed = random(index);
+	float time = _Time * _Speed;
+	float3 offset = float3(cnoise(seed + time), cnoise(seed + 5.7265 + time), cnoise(seed + 4.325 + time));
+
+	float3 basePosition = (float3)id - (float3)_Dimensions / 2;
+
+	// Calculate offsets to the converge target position
+	float3 direction = _Converge - basePosition;
+	float normalizedDistance = clamp(length(direction), 0, _ConvergeRadius) / _ConvergeRadius;
+	normalizedDistance = smoothstep(0, 1, 1 - normalizedDistance);
+	direction = normalize(direction) * normalizedDistance * _ConvergeStrength;
+
+	float3 preOffset = _PreOffset[index];
+	_PreOffset[index] = lerp(preOffset, basePosition + direction, _ConvergeSpeed);
+
+	_Positions[index] = preOffset + offset * _MaxOffset;
+}
