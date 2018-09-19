@@ -4,14 +4,6 @@
     using UnityEngine.Assertions;
     using System;
 
-    public static class GridExtension
-    {
-        public static int GridCellCount(this Vector3Int grid)
-        {
-            return grid.x * grid.y * grid.z;
-        }
-    }
-
     [RequireComponent(typeof(MeshFilter))]
     [RequireComponent(typeof(MeshRenderer))]
     public class ConnectionsGrid : MonoBehaviour
